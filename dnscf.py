@@ -10,7 +10,6 @@ CF_ZONE_ID      =   os.environ["CF_ZONE_ID"]
 CF_DNS_NAME     =   os.environ["CF_DNS_NAME"]
 
 # pushplus_token
-PUSHPLUS_TOKEN  =   os.environ["PUSHPLUS_TOKEN"]
 
 
 
@@ -55,32 +54,31 @@ def update_dns_record(record_id, name, cf_ip):
         'name': name,
         'content': cf_ip
     }
-
-    response = requests.put(url, headers=headers, json=data)
-
-    if response.status_code == 200:
-        print(f"cf_dns_change success: ---- Time: " + str(
-            time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())) + " ---- ip：" + str(cf_ip))
-        return "ip:" + str(cf_ip) + "解析" + str(name) + "成功"
-    else:
+    try:
+        response = requests.put(url, headers=headers, json=data)
+        if response.status_code == 200:
+            print(f"cf_dns_change success: ---- Time: " + str(
+                time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())) + " ---- ip：" + str(cf_ip))
+            return "ip:" + str(cf_ip) + "解析" + str(name) + "成功"
+    except Exception as e:
         traceback.print_exc()
         print(f"cf_dns_change ERROR: ---- Time: " + str(
             time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())) + " ---- MESSAGE: " + str(e))
         return "ip:" + str(cf_ip) + "解析" + str(name) + "失败"
 
 # 消息推送
-def push_plus(content):
-    url = 'http://www.pushplus.plus/send'
-    data = {
-        "token": PUSHPLUS_TOKEN,
-        "title": "IP优选DNSCF推送",
-        "content": content,
-        "template": "markdown",
-        "channel": "wechat"
-    }
-    body = json.dumps(data).encode(encoding='utf-8')
-    headers = {'Content-Type': 'application/json'}
-    requests.post(url, data=body, headers=headers)
+# def push_plus(content):
+#     url = 'http://www.pushplus.plus/send'
+#     data = {
+#         "token": PUSHPLUS_TOKEN,
+#         "title": "IP优选DNSCF推送",
+#         "content": content,
+#         "template": "markdown",
+#         "channel": "wechat"
+#     }
+#     body = json.dumps(data).encode(encoding='utf-8')
+#     headers = {'Content-Type': 'application/json'}
+#     requests.post(url, data=body, headers=headers)
 
 # 主函数
 def main():
@@ -88,14 +86,13 @@ def main():
     ip_addresses_str = get_cf_speed_test_ip()
     ip_addresses = ip_addresses_str.split(',')
     dns_records = get_dns_records(CF_DNS_NAME)
-    push_plus_content = []
+    # push_plus_content = []
     # 遍历 IP 地址列表
     for index, ip_address in enumerate(ip_addresses):
         # 执行 DNS 变更
         dns = update_dns_record(dns_records[index], CF_DNS_NAME, ip_address)
-        push_plus_content.append(dns)
 
-    push_plus('\n'.join(push_plus_content))
+    # push_plus('\n'.join(push_plus_content))
 
 if __name__ == '__main__':
     main()
